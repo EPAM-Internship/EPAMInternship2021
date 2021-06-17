@@ -86,7 +86,7 @@ class ZoomClass : AppCompatImageView, View.OnTouchListener,
         }
     }
 
-    private  fun fitToScreen() {
+    private fun fitToScreen() {
         mSaveScale = 1f
         val scale: Float
         val drawable = drawable
