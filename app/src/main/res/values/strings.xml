@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">EPAMInternship2021</string>
+    <string name="scale_factor">Scale Factor:</string>
 </resources>
