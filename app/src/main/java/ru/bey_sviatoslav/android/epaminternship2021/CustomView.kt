@@ -11,7 +11,6 @@ import android.view.View
 
 class CustomView(context: Context?, ic: Int) : View(context) {
     var image: Bitmap
-    //private val bitmapSource: Bitmap = BitmapFactory.decodeResource(resources, ic)
     var screenHeight: Int
     var screenWidth: Int
     var paint: Paint
@@ -20,13 +19,12 @@ class CustomView(context: Context?, ic: Int) : View(context) {
     var scale = 1.0f
     var horizontalOffset = 0f
     var verticalOffset = 0f
-    var NORMAL = 0
-    var ZOOM = 1
-    var DRAG = 2
+    var START = 0
+    var WORKING = 1
     var isScaling = false
     var touchX = 0f
     var touchY = 0f
-    var mode = NORMAL
+    var mode = START
     var drawMatrix: Matrix? = null
     var lastFocusX = 0f
     var lastFocusY = 0f
@@ -49,8 +47,15 @@ class CustomView(context: Context?, ic: Int) : View(context) {
         invalidate()
     }
 
-    protected override fun onDraw(canvas: Canvas) {
+    override fun onDraw(canvas: Canvas) {
         canvas.save()
+        canvas.drawColor(0, PorterDuff.Mode.CLEAR)
+        canvas.drawColor(Color.WHITE)
+        if (mode == START) {
+            //This works perfectly as expected
+            drawMatrix?.postTranslate(horizontalOffset, verticalOffset)
+            drawMatrix?.postScale(scale, scale)
+        }
         canvas.drawBitmap(image, drawMatrix!!, paint);
         canvas.restore()
     }
@@ -85,14 +90,13 @@ class CustomView(context: Context?, ic: Int) : View(context) {
 
         override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             isScaling = true
-            mode = ZOOM
+            mode = WORKING
             lastFocusX = detector.getFocusX();
             lastFocusY = detector.getFocusY();
             return true
         }
 
         override fun onScaleEnd(detector: ScaleGestureDetector) {
-            mode = NORMAL
             isScaling = false
         }
     }
@@ -111,6 +115,7 @@ class CustomView(context: Context?, ic: Int) : View(context) {
 
         override fun onScroll(e1: MotionEvent, e2: MotionEvent,
                               distanceX: Float, distanceY: Float): Boolean {
+            mode = WORKING
             drawMatrix?.postTranslate(-distanceX, -distanceY);
             invalidate();
             return true;
@@ -156,7 +161,7 @@ class CustomView(context: Context?, ic: Int) : View(context) {
         scaleGesture = ScaleGestureDetector(getContext(),
                 ScaleListener())
         gestures = GestureDetector(getContext(), GestureListener())
-        mode = NORMAL
+        mode = START
         initialize()
     }
 }
