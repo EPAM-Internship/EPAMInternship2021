@@ -17,6 +17,7 @@ class CustomView(context: Context?, ic: Int) : View(context) {
     var gestures: GestureDetector
     var scaleGesture: ScaleGestureDetector
     var scale = 1.0f
+    var realScale = 1.0f
     var horizontalOffset = 0f
     var verticalOffset = 0f
     var START = 0
@@ -72,7 +73,9 @@ class CustomView(context: Context?, ic: Int) : View(context) {
             transformationMatrix.postTranslate(-focusX, -focusY)
 
             transformationMatrix.postScale(detector.scaleFactor, detector.scaleFactor)
+            realScale*=detector.scaleFactor
 
+            image = changeImage(realScale)
 /* Adding focus shift to allow for scrolling with two pointers down. Remove it to skip this functionality. This could be done in fewer lines, but for clarity I do it this way here */
             //Edited after comment by chochim
 
@@ -163,5 +166,21 @@ class CustomView(context: Context?, ic: Int) : View(context) {
         gestures = GestureDetector(getContext(), GestureListener())
         mode = START
         initialize()
+    }
+
+    fun changeImage(scale: Float): Bitmap {
+
+        return if (scale >= 2){
+            val bitmapSource: Bitmap  = BitmapFactory.decodeResource(resources, R.drawable.ic_battery)
+            Bitmap.createBitmap(bitmapSource,
+                    0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
+
+        }
+        else {
+            val bitmapSource: Bitmap  = BitmapFactory.decodeResource(resources, R.drawable.motherboard)
+            Bitmap.createBitmap(bitmapSource,
+                    0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
+
+        }
     }
 }
