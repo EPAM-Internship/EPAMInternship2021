@@ -2,7 +2,6 @@ package ru.bey_sviatoslav.android.epaminternship2021
 
 import android.content.Context
 import android.graphics.*
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -30,6 +29,7 @@ class CustomView(context: Context?, ic: Int) : View(context) {
     var drawMatrix: Matrix? = null
     var lastFocusX = 0f
     var lastFocusY = 0f
+    var maxScale = 5
 
     //Best fit image display on canvas
     private fun initialize() {
@@ -74,9 +74,11 @@ class CustomView(context: Context?, ic: Int) : View(context) {
             transformationMatrix.postTranslate(-focusX, -focusY)
 
             transformationMatrix.postScale(detector.scaleFactor, detector.scaleFactor)
-            realScale*=detector.scaleFactor
+            realScale *= detector.scaleFactor
 
+            changeAlpha(realScale)
             image = changeImage(realScale)
+
 /* Adding focus shift to allow for scrolling with two pointers down. Remove it to skip this functionality. This could be done in fewer lines, but for clarity I do it this way here */
             //Edited after comment by chochim
 
@@ -120,9 +122,9 @@ class CustomView(context: Context?, ic: Int) : View(context) {
         override fun onScroll(e1: MotionEvent, e2: MotionEvent,
                               distanceX: Float, distanceY: Float): Boolean {
             mode = WORKING
-            drawMatrix?.postTranslate(-distanceX, -distanceY);
-            invalidate();
-            return true;
+            drawMatrix?.postTranslate(-distanceX, -distanceY)
+            invalidate()
+            return true
         }
 
         override fun onLongPress(p0: MotionEvent?) {}
@@ -169,19 +171,33 @@ class CustomView(context: Context?, ic: Int) : View(context) {
         initialize()
     }
 
-    fun changeImage(scale: Float): Bitmap {
+    private fun changeImage(scale: Float): Bitmap {
 
-        return if (scale >= 5){
-            val bitmapSource: Bitmap  = BitmapFactory.decodeResource(resources, R.drawable.ic_battery)
+        return if (scale >= maxScale) {
+            val bitmapSource: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.ic_battery)
+            Bitmap.createBitmap(bitmapSource,
+                    0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
+
+        } else {
+            val bitmapSource: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.back)
             Bitmap.createBitmap(bitmapSource,
                     0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
 
         }
-        else {
-            val bitmapSource: Bitmap  = BitmapFactory.decodeResource(resources, R.drawable.back)
-            Bitmap.createBitmap(bitmapSource,
-                    0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
+    }
 
+    private fun changeAlpha(scale: Float) {
+        image.let {
+            image = adjustOpacity(it,  scale/maxScale * 100)
         }
+
+    }
+
+    private fun adjustOpacity(bitmap: Bitmap, opacity: Float): Bitmap {
+        val mutableBitmap = if (bitmap.isMutable) bitmap else bitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(mutableBitmap)
+        val colour = opacity.toInt() and 0xFF shl 24
+        canvas.drawColor(colour, PorterDuff.Mode.DST_IN)
+        return mutableBitmap
     }
 }
