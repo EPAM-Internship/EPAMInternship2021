@@ -5,24 +5,5 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <ru.bey_sviatoslav.android.epaminternship2021.ZoomableViewGroup
-        android:id="@+id/zoomControl"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".MainActivity">
-
-        <FrameLayout
-            android:id="@+id/frameLayoutParent"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <ImageView
-                android:id="@+id/imageView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="center" />
-        </FrameLayout>
-    </ru.bey_sviatoslav.android.epaminternship2021.ZoomableViewGroup>
-
 
 </RelativeLayout>

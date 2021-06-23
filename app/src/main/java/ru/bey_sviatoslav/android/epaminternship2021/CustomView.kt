@@ -2,6 +2,7 @@ package ru.bey_sviatoslav.android.epaminternship2021
 
 import android.content.Context
 import android.graphics.*
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -170,14 +171,14 @@ class CustomView(context: Context?, ic: Int) : View(context) {
 
     fun changeImage(scale: Float): Bitmap {
 
-        return if (scale >= 2){
+        return if (scale >= 5){
             val bitmapSource: Bitmap  = BitmapFactory.decodeResource(resources, R.drawable.ic_battery)
             Bitmap.createBitmap(bitmapSource,
                     0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
 
         }
         else {
-            val bitmapSource: Bitmap  = BitmapFactory.decodeResource(resources, R.drawable.motherboard)
+            val bitmapSource: Bitmap  = BitmapFactory.decodeResource(resources, R.drawable.back)
             Bitmap.createBitmap(bitmapSource,
                     0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
 
