@@ -2,6 +2,7 @@ package ru.bey_sviatoslav.android.epaminternship2021
 
 import android.content.Context
 import android.graphics.*
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -29,7 +30,8 @@ class CustomView(context: Context?, ic: Int) : View(context) {
     var drawMatrix: Matrix? = null
     var lastFocusX = 0f
     var lastFocusY = 0f
-    var maxScale = 5
+    var maxScale = 3
+    var minScale = 1
 
     //Best fit image display on canvas
     private fun initialize() {
@@ -76,7 +78,9 @@ class CustomView(context: Context?, ic: Int) : View(context) {
             transformationMatrix.postScale(detector.scaleFactor, detector.scaleFactor)
             realScale *= detector.scaleFactor
 
-            changeAlpha(realScale)
+            changeAlpha(realScale.toInt())
+            Log.d("SimpleScale", detector.scaleFactor.toString())
+            Log.d("RelativeScale", realScale.toString())
             image = changeImage(realScale)
 
 /* Adding focus shift to allow for scrolling with two pointers down. Remove it to skip this functionality. This could be done in fewer lines, but for clarity I do it this way here */
@@ -186,18 +190,14 @@ class CustomView(context: Context?, ic: Int) : View(context) {
         }
     }
 
-    private fun changeAlpha(scale: Float) {
-        image.let {
-            image = adjustOpacity(it,  scale/maxScale * 100)
-        }
+    private fun changeAlpha(scale: Int) {
+        val a = minScale.toFloat()
+        val rs =  (255 - ((scale.toFloat() - minScale.toFloat())/maxScale.toFloat()) * 255)
 
+
+        Log.d("BadAlpha", rs.toString())
+        Log.d("BadCalculating", a.toString())
+        paint.alpha = rs.toInt()
     }
 
-    private fun adjustOpacity(bitmap: Bitmap, opacity: Float): Bitmap {
-        val mutableBitmap = if (bitmap.isMutable) bitmap else bitmap.copy(Bitmap.Config.ARGB_8888, true)
-        val canvas = Canvas(mutableBitmap)
-        val colour = opacity.toInt() and 0xFF shl 24
-        canvas.drawColor(colour, PorterDuff.Mode.DST_IN)
-        return mutableBitmap
-    }
 }
