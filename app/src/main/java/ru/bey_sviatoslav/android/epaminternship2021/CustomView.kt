@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -51,6 +50,8 @@ class CustomView @JvmOverloads constructor(
     private lateinit var backBitmap: Bitmap
     private lateinit var insidesBitmap: Bitmap
     private lateinit var boardTopBitmap: Bitmap
+    private lateinit var boardBottomBitmap: Bitmap
+    private lateinit var batteryBitmap: Bitmap
 
     //Best fit image display on canvas
     private fun initialize() {
@@ -75,6 +76,11 @@ class CustomView @JvmOverloads constructor(
         backBitmap = Bitmap.createBitmap(backBitmapSrc,
                 0, 0, backBitmapSrc.width, backBitmapSrc.height, matrix, true)
 
+//        val fullSizeBatteryBitmapSrc = BitmapFactory.decodeResource(resources, R.drawable.battery_)
+//        val fullSizeBatteryBitmap = Bitmap.createBitmap(fullSizeBatteryBitmapSrc,
+//                124, 0,
+//                fullSizeBatteryBitmapSrc.width, fullSizeBatteryBitmapSrc.height, matrix, true)
+
         val insidesBitmapSrc = BitmapFactory.decodeResource(resources, R.drawable.body_insides)
         insidesBitmap = Bitmap.createBitmap(insidesBitmapSrc,
                 0, 0, insidesBitmapSrc.width, insidesBitmapSrc.height, matrix, true)
@@ -82,6 +88,14 @@ class CustomView @JvmOverloads constructor(
         val boardTopBitmapSrc = BitmapFactory.decodeResource(resources, R.drawable.board_top)
         boardTopBitmap = Bitmap.createBitmap(boardTopBitmapSrc,
                 0, 0, boardTopBitmapSrc.width, boardTopBitmapSrc.height, matrix, true)
+
+        val boardBottomBitmapSrc = BitmapFactory.decodeResource(resources, R.drawable.board_bottom)
+        boardBottomBitmap = Bitmap.createBitmap(boardBottomBitmapSrc,
+                0, 0, boardBottomBitmapSrc.width, boardBottomBitmapSrc.height, matrix, true)
+
+        val batteryBitmapSrc = BitmapFactory.decodeResource(resources, R.drawable.battery)
+        batteryBitmap = Bitmap.createBitmap(batteryBitmapSrc,
+                0, 0, batteryBitmapSrc.width, batteryBitmapSrc.height, matrix, true)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -208,7 +222,7 @@ class CustomView @JvmOverloads constructor(
             in 1.0f..1.4999f -> {
                 changeImageFromScaleToScaleWithOpacity(
                         backBitmap,
-                        insidesBitmap,
+                        listOf(insidesBitmap),
                         false,
                         scale,
                         1.0f,
@@ -218,24 +232,24 @@ class CustomView @JvmOverloads constructor(
             in 1.5f..1.9999f -> {
                 changeImageFromScaleToScaleWithOpacity(
                         insidesBitmap,
-                        boardTopBitmap,
+                        listOf(boardBottomBitmap, batteryBitmap, boardTopBitmap),
                         true,
                         scale,
                         1.5f,
                         1.9999f,
                         canvas)
             }
-            else -> {
-                val bitmapSource: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.body_insides)
-                val bitmap = Bitmap.createBitmap(bitmapSource,
-                        0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
-                canvas.drawBitmap(bitmap, drawMatrix!!, paint)
-            }
+//            else -> {
+//                val bitmapSource: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.body_insides)
+//                val bitmap = Bitmap.createBitmap(bitmapSource,
+//                        0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
+//                canvas.drawBitmap(bitmap, drawMatrix!!, paint)
+//            }
         }
     }
 
     private fun changeImageFromScaleToScaleWithOpacity(imageFrom: Bitmap,
-                                                       imageTo: Bitmap,
+                                                       listOfImagesTo: List<Bitmap>,
                                                        imageToOnTopLayer: Boolean,
                                                        currentScale: Float,
                                                        scaleFrom: Float,
@@ -248,12 +262,16 @@ class CustomView @JvmOverloads constructor(
             paintAlpha.alpha = opacityNormalized.times(255).roundToInt()
 
             canvas.drawBitmap(imageFrom, drawMatrix!!, paint)
-            canvas.drawBitmap(imageTo, drawMatrix!!, paintAlpha)
+            listOfImagesTo.forEach { bitmap ->
+                canvas.drawBitmap(bitmap, drawMatrix!!, paintAlpha)
+            }
         } else {
             val opacityNormalized = 1 - (currentScale - scaleFrom) / (scaleTo - scaleFrom)
             paintAlpha.alpha = opacityNormalized.times(255).roundToInt()
 
-            canvas.drawBitmap(imageTo, drawMatrix!!, paint)
+            listOfImagesTo.forEach { bitmap ->
+                canvas.drawBitmap(bitmap, drawMatrix!!, paint)
+            }
             canvas.drawBitmap(imageFrom, drawMatrix!!, paintAlpha)
         }
     }
