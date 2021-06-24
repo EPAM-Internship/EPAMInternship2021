@@ -9,7 +9,6 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
-import kotlin.math.max
 import kotlin.math.roundToInt
 
 
@@ -109,28 +108,28 @@ class CustomView @JvmOverloads constructor(
 
             realScale *= detector.scaleFactor
 
-            Log.d("log-my", detector.scaleFactor.toString())
-
             if (isScaleInBounds(realScale)) {
                 transformationMatrix.postScale(detector.scaleFactor, detector.scaleFactor)
                 val focusShiftX = focusX - lastFocusX
                 val focusShiftY = focusY - lastFocusY
                 transformationMatrix.postTranslate(focusX + focusShiftX, focusY + focusShiftY)
                 drawMatrix!!.postConcat(transformationMatrix)
-                lastFocusX = focusX
-                lastFocusY = focusY
                 invalidate()
             } else {
                 realScale = minScale.coerceAtLeast(realScale.coerceAtMost(maxScale))
             }
+
+            lastFocusX = focusX
+            lastFocusY = focusY
+
             return true
         }
 
         override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             isScaling = true
             mode = WORKING
-            lastFocusX = detector.focusX;
-            lastFocusY = detector.focusY;
+            lastFocusX = detector.focusX
+            lastFocusY = detector.focusY
             return true
         }
 
@@ -154,9 +153,9 @@ class CustomView @JvmOverloads constructor(
         override fun onScroll(e1: MotionEvent, e2: MotionEvent,
                               distanceX: Float, distanceY: Float): Boolean {
             mode = WORKING
-            drawMatrix?.postTranslate(-distanceX, -distanceY);
-            invalidate();
-            return true;
+            drawMatrix?.postTranslate(-distanceX, -distanceY)
+            invalidate()
+            return true
         }
 
         override fun onLongPress(p0: MotionEvent?) {}
