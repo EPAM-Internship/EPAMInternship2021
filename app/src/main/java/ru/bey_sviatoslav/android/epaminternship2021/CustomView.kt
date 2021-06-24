@@ -2,7 +2,6 @@ package ru.bey_sviatoslav.android.epaminternship2021
 
 import android.content.Context
 import android.graphics.*
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -11,10 +10,13 @@ import android.view.View
 
 
 class CustomView(context: Context?, ic: Int) : View(context) {
-    var image: Bitmap
+    var currentLayer: Bitmap
+    var nextLayer: Bitmap
+    var layers = arrayOf<Array<BitmapInfo>>()
     var screenHeight: Int
     var screenWidth: Int
-    var paint: Paint
+    var currentPaint: Paint
+    var nextPaint: Paint
     var gestures: GestureDetector
     var scaleGesture: ScaleGestureDetector
     var scale = 1.0f
@@ -33,18 +35,18 @@ class CustomView(context: Context?, ic: Int) : View(context) {
 
     //Best fit image display on canvas
     private fun initialize() {
-        val imgPartRatio = image.width / image.height.toFloat()
+        val imgPartRatio = currentLayer.width / currentLayer.height.toFloat()
         val screenRatio = screenWidth.toFloat() / screenHeight.toFloat()
         if (screenRatio > imgPartRatio) {
-            scale = screenHeight.toFloat() / image.height.toFloat() // fit height
+            scale = screenHeight.toFloat() / currentLayer.height.toFloat() // fit height
             horizontalOffset = (screenWidth.toFloat() - scale
-                    * image.width.toFloat()) / 2.0f
+                    * currentLayer.width.toFloat()) / 2.0f
             verticalOffset = 0f
         } else {
-            scale = screenWidth.toFloat() / image.width.toFloat() // fit width
+            scale = screenWidth.toFloat() / currentLayer.width.toFloat() // fit width
             horizontalOffset = 0f
             verticalOffset = (screenHeight.toFloat() - scale
-                    * image.height.toFloat()) / 2.0f
+                    * currentLayer.height.toFloat()) / 2.0f
         }
         invalidate()
     }
@@ -58,7 +60,8 @@ class CustomView(context: Context?, ic: Int) : View(context) {
             drawMatrix?.postTranslate(horizontalOffset, verticalOffset)
             drawMatrix?.postScale(scale, scale)
         }
-        canvas.drawBitmap(image, drawMatrix!!, paint);
+        canvas.drawBitmap(currentLayer, drawMatrix!!, currentPaint)
+        canvas.drawBitmap(nextLayer, drawMatrix!!, nextPaint)
         canvas.restore()
     }
 
@@ -76,7 +79,8 @@ class CustomView(context: Context?, ic: Int) : View(context) {
             transformationMatrix.postScale(detector.scaleFactor, detector.scaleFactor)
             realScale*=detector.scaleFactor
 
-            image = changeImage(realScale)
+            currentLayer = changeLayer(realScale)
+            //changeLayer(realScale)
 /* Adding focus shift to allow for scrolling with two pointers down. Remove it to skip this functionality. This could be done in fewer lines, but for clarity I do it this way here */
             //Edited after comment by chochim
 
@@ -151,17 +155,24 @@ class CustomView(context: Context?, ic: Int) : View(context) {
     }
 
     init {
+        //initializing layers
+        layers[0] = arrayOf(BitmapInfo(R.drawable.back, 0f, 0f, 1f))
+        layers[1] = arrayOf(BitmapInfo(R.drawable.body_insides, 0f, 0f, 2f))
+        layers[2] = arrayOf(BitmapInfo(R.drawable.battery, 0f, 0f, 4f), BitmapInfo(R.drawable.board_bottom, 0f, 0f, 4f), BitmapInfo(R.drawable.board_top, 0f, 0f, 2f))
         //initializing variables
         drawMatrix = Matrix()
-        image = BitmapFactory.decodeResource(resources, ic)
+        currentLayer = BitmapFactory.decodeResource(resources, ic)
+        nextLayer = BitmapFactory.decodeResource(resources, R.drawable.body_insides)
         //This is a full screen view
         screenWidth = getResources().getDisplayMetrics().widthPixels
         screenHeight = getResources().getDisplayMetrics().heightPixels
-        paint = Paint()
-        paint.setAntiAlias(true)
-        paint.setFilterBitmap(true)
-        paint.setDither(true)
-        paint.setColor(Color.WHITE)
+        currentPaint = Paint()
+        nextPaint = Paint()
+        nextPaint.alpha = 0
+        currentPaint.setAntiAlias(true)
+        currentPaint.setFilterBitmap(true)
+        currentPaint.setDither(true)
+        currentPaint.setColor(Color.WHITE)
         scaleGesture = ScaleGestureDetector(getContext(),
                 ScaleListener())
         gestures = GestureDetector(getContext(), GestureListener())
@@ -169,15 +180,17 @@ class CustomView(context: Context?, ic: Int) : View(context) {
         initialize()
     }
 
-    fun changeImage(scale: Float): Bitmap {
+    fun changeLayer(scale: Float): Bitmap {
 
         return if (scale >= 5){
-            val bitmapSource: Bitmap  = BitmapFactory.decodeResource(resources, R.drawable.ic_battery)
+            nextPaint.alpha = 255
+            val bitmapSource: Bitmap  = BitmapFactory.decodeResource(resources, R.drawable.body_insides)
             Bitmap.createBitmap(bitmapSource,
                     0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
 
         }
         else {
+            nextPaint.alpha = 0
             val bitmapSource: Bitmap  = BitmapFactory.decodeResource(resources, R.drawable.back)
             Bitmap.createBitmap(bitmapSource,
                     0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
