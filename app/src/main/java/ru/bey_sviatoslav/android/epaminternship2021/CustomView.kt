@@ -239,12 +239,6 @@ class CustomView @JvmOverloads constructor(
                         1.9999f,
                         canvas)
             }
-//            else -> {
-//                val bitmapSource: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.body_insides)
-//                val bitmap = Bitmap.createBitmap(bitmapSource,
-//                        0, 0, bitmapSource.width, bitmapSource.height, matrix, true)
-//                canvas.drawBitmap(bitmap, drawMatrix!!, paint)
-//            }
         }
     }
 
