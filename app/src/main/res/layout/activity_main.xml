@@ -7,8 +7,8 @@
     android:background="@color/white"
     tools:context=".MainActivity">
 
-    <ru.bey_sviatoslav.android.epaminternship2021.DrawableImage
-        android:id="@+id/drawableImage"
+    <ru.bey_sviatoslav.android.epaminternship2021.CustomView
+        android:id="@+id/customView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"

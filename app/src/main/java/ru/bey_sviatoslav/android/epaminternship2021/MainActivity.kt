@@ -15,9 +15,9 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
 
-        val observer: ViewTreeObserver = binding.drawableImage.viewTreeObserver
+        val observer: ViewTreeObserver = binding.customView.viewTreeObserver
         observer.addOnGlobalLayoutListener {
-            binding.scaleFactorValue.text = binding.drawableImage.mScaleFactor.toString()
+            binding.scaleFactorValue.text = binding.customView.realScale.toString()
         }
 
         supportActionBar?.hide()
