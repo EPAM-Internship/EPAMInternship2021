@@ -2,6 +2,7 @@ package ru.bey_sviatoslav.android.epaminternship2021
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.ViewTreeObserver
 import ru.bey_sviatoslav.android.epaminternship2021.databinding.ActivityMainBinding
 
@@ -17,7 +18,7 @@ class MainActivity : AppCompatActivity() {
 
         val observer: ViewTreeObserver = binding.customView.viewTreeObserver
         observer.addOnGlobalLayoutListener {
-            binding.scaleFactorValue.text = binding.customView.realScale.toString()
+            Log.d("log-my", binding.customView.realScale.toString())
         }
 
         supportActionBar?.hide()

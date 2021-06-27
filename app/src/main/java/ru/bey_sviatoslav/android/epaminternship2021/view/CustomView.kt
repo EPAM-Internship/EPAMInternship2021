@@ -1,4 +1,4 @@
-package ru.bey_sviatoslav.android.epaminternship2021
+package ru.bey_sviatoslav.android.epaminternship2021.view
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -8,6 +8,9 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
+import ru.bey_sviatoslav.android.epaminternship2021.layer.Layer
+import ru.bey_sviatoslav.android.epaminternship2021.layer.LayerAction
+import ru.bey_sviatoslav.android.epaminternship2021.layer.LayoutManager
 import kotlin.math.roundToInt
 
 
@@ -16,44 +19,32 @@ class CustomView @JvmOverloads constructor(
         attrs: AttributeSet? = null,
         defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
-    var image: Bitmap
-
-    var screenHeight: Int
-    var screenWidth: Int
-
-    var paint: Paint
-
-    var gestures: GestureDetector
-    var scaleGesture: ScaleGestureDetector
-
-    var scale = 1.0f
+    private var image: Bitmap
+    private var screenHeight: Int = resources.displayMetrics.heightPixels
+    private var screenWidth: Int = resources.displayMetrics.widthPixels
+    private var paint: Paint = Paint()
+    private var gestures: GestureDetector
+    private var scaleGesture: ScaleGestureDetector
+    private var scale = 1.0f
+    private var horizontalOffset = 0f
+    private var verticalOffset = 0f
+    private var START = 0
+    private var WORKING = 1
+    private var isScaling = false
+    private var mode = START
+    private var drawMatrix: Matrix = Matrix()
+    private var lastFocusX = 0f
+    private var lastFocusY = 0f
+    private var layoutManager: LayoutManager
+    private var firstLayerAction: LayerAction
+    private var secondLayerAction: LayerAction
+    private var thirdLayer: Layer
 
     var realScale = 1.0f
     var minScale = 1.0f
-    var maxScale = 1.9999f
+    var maxScale = 5.0f
 
-    var horizontalOffset = 0f
-    var verticalOffset = 0f
 
-    var START = 0
-    var WORKING = 1
-
-    var isScaling = false
-
-    var mode = START
-
-    var drawMatrix: Matrix? = null
-
-    var lastFocusX = 0f
-    var lastFocusY = 0f
-
-    private lateinit var backBitmap: Bitmap
-    private lateinit var insidesBitmap: Bitmap
-    private lateinit var boardTopBitmap: Bitmap
-    private lateinit var boardBottomBitmap: Bitmap
-    private lateinit var batteryBitmap: Bitmap
-
-    //Best fit image display on canvas
     private fun initialize() {
         val imgPartRatio = image.width / image.height.toFloat()
         val screenRatio = screenWidth.toFloat() / screenHeight.toFloat()
@@ -71,41 +62,13 @@ class CustomView @JvmOverloads constructor(
         invalidate()
     }
 
-    private fun initializeBitmaps() {
-        val backBitmapSrc = BitmapFactory.decodeResource(resources, R.drawable.back)
-        backBitmap = Bitmap.createBitmap(backBitmapSrc,
-                0, 0, backBitmapSrc.width, backBitmapSrc.height, matrix, true)
-
-//        val fullSizeBatteryBitmapSrc = BitmapFactory.decodeResource(resources, R.drawable.battery_)
-//        val fullSizeBatteryBitmap = Bitmap.createBitmap(fullSizeBatteryBitmapSrc,
-//                124, 0,
-//                fullSizeBatteryBitmapSrc.width, fullSizeBatteryBitmapSrc.height, matrix, true)
-
-        val insidesBitmapSrc = BitmapFactory.decodeResource(resources, R.drawable.body_insides)
-        insidesBitmap = Bitmap.createBitmap(insidesBitmapSrc,
-                0, 0, insidesBitmapSrc.width, insidesBitmapSrc.height, matrix, true)
-
-        val boardTopBitmapSrc = BitmapFactory.decodeResource(resources, R.drawable.board_top)
-        boardTopBitmap = Bitmap.createBitmap(boardTopBitmapSrc,
-                0, 0, boardTopBitmapSrc.width, boardTopBitmapSrc.height, matrix, true)
-
-        val boardBottomBitmapSrc = BitmapFactory.decodeResource(resources, R.drawable.board_bottom)
-        boardBottomBitmap = Bitmap.createBitmap(boardBottomBitmapSrc,
-                0, 0, boardBottomBitmapSrc.width, boardBottomBitmapSrc.height, matrix, true)
-
-        val batteryBitmapSrc = BitmapFactory.decodeResource(resources, R.drawable.battery)
-        batteryBitmap = Bitmap.createBitmap(batteryBitmapSrc,
-                0, 0, batteryBitmapSrc.width, batteryBitmapSrc.height, matrix, true)
-    }
-
     override fun onDraw(canvas: Canvas) {
         canvas.save()
         canvas.drawColor(0, PorterDuff.Mode.CLEAR)
         canvas.drawColor(Color.WHITE)
         if (mode == START) {
-            //This works perfectly as expected
-            drawMatrix?.postTranslate(horizontalOffset, verticalOffset)
-            drawMatrix?.postScale(scale, scale)
+            drawMatrix.postTranslate(horizontalOffset, verticalOffset)
+            drawMatrix.postScale(scale, scale)
         }
         changeImage(realScale, canvas)
         canvas.restore()
@@ -117,7 +80,6 @@ class CustomView @JvmOverloads constructor(
             val focusX = detector.focusX
             val focusY = detector.focusY
 
-            //Zoom focus is where the fingers are centered,
             transformationMatrix.postTranslate(-focusX, -focusY)
 
             realScale *= detector.scaleFactor
@@ -127,7 +89,7 @@ class CustomView @JvmOverloads constructor(
                 val focusShiftX = focusX - lastFocusX
                 val focusShiftY = focusY - lastFocusY
                 transformationMatrix.postTranslate(focusX + focusShiftX, focusY + focusShiftY)
-                drawMatrix!!.postConcat(transformationMatrix)
+                drawMatrix.postConcat(transformationMatrix)
                 invalidate()
             } else {
                 realScale = minScale.coerceAtLeast(realScale.coerceAtMost(maxScale))
@@ -167,7 +129,7 @@ class CustomView @JvmOverloads constructor(
         override fun onScroll(e1: MotionEvent, e2: MotionEvent,
                               distanceX: Float, distanceY: Float): Boolean {
             mode = WORKING
-            drawMatrix?.postTranslate(-distanceX, -distanceY)
+            drawMatrix.postTranslate(-distanceX, -distanceY)
             invalidate()
             return true
         }
@@ -199,13 +161,6 @@ class CustomView @JvmOverloads constructor(
     }
 
     init {
-        //initializing variables
-        drawMatrix = Matrix()
-        image = BitmapFactory.decodeResource(resources, R.drawable.back)
-        //This is a full screen view
-        screenWidth = resources.displayMetrics.widthPixels
-        screenHeight = resources.displayMetrics.heightPixels
-        paint = Paint()
         paint.isAntiAlias = true
         paint.isFilterBitmap = true
         paint.isDither = true
@@ -213,61 +168,69 @@ class CustomView @JvmOverloads constructor(
         scaleGesture = ScaleGestureDetector(getContext(), ScaleListener())
         gestures = GestureDetector(getContext(), GestureListener())
         mode = START
-        initializeBitmaps()
+        layoutManager = LayoutManager(this)
+        image = layoutManager.backBitmap
+        firstLayerAction = layoutManager.firstLayerAction
+        secondLayerAction = layoutManager.secondLayerAction
+        thirdLayer = layoutManager.thirdLayer
         initialize()
     }
 
     private fun changeImage(scale: Float, canvas: Canvas) {
         when (scale) {
-            in 1.0f..1.4999f -> {
+            in firstLayerAction.scaleFrom..firstLayerAction.scaleTo -> {
                 changeImageFromScaleToScaleWithOpacity(
-                        backBitmap,
-                        listOf(insidesBitmap),
+                        firstLayerAction,
                         false,
                         scale,
-                        1.0f,
-                        1.4999f,
                         canvas)
             }
-            in 1.5f..1.9999f -> {
+            in secondLayerAction.scaleFrom..secondLayerAction.scaleTo -> {
                 changeImageFromScaleToScaleWithOpacity(
-                        insidesBitmap,
-                        listOf(boardBottomBitmap, batteryBitmap, boardTopBitmap),
+                        secondLayerAction,
                         true,
                         scale,
-                        1.5f,
-                        1.9999f,
                         canvas)
+            }
+            in thirdLayer.scaleFrom..thirdLayer.scaleTo -> {
+                drawBitmaps(thirdLayer.listOfBitmaps, canvas, paint)
             }
         }
     }
 
-    private fun changeImageFromScaleToScaleWithOpacity(imageFrom: Bitmap,
-                                                       listOfImagesTo: List<Bitmap>,
+    private fun changeImageFromScaleToScaleWithOpacity(layerAction: LayerAction,
                                                        imageToOnTopLayer: Boolean,
                                                        currentScale: Float,
-                                                       scaleFrom: Float,
-                                                       scaleTo: Float,
                                                        canvas: Canvas) {
         val paintAlpha = Paint()
 
         if (imageToOnTopLayer) {
-            val opacityNormalized = (currentScale - scaleFrom) / (scaleTo - scaleFrom)
+            val opacityNormalized = getOpacityNormalized(currentScale, layerAction)
             paintAlpha.alpha = opacityNormalized.times(255).roundToInt()
 
-            canvas.drawBitmap(imageFrom, drawMatrix!!, paint)
-            listOfImagesTo.forEach { bitmap ->
-                canvas.drawBitmap(bitmap, drawMatrix!!, paintAlpha)
-            }
+            canvas.drawBitmap(layerAction.bitmapFrom, drawMatrix, paint)
+            drawBitmaps(layerAction.listOfBitmaps, canvas, paintAlpha)
         } else {
-            val opacityNormalized = 1 - (currentScale - scaleFrom) / (scaleTo - scaleFrom)
-            paintAlpha.alpha = opacityNormalized.times(255).roundToInt()
+            val opacityNormalizedReversed = getOpacityNormalizedReversed(currentScale, layerAction)
+            paintAlpha.alpha = opacityNormalizedReversed.times(255).roundToInt()
 
-            listOfImagesTo.forEach { bitmap ->
-                canvas.drawBitmap(bitmap, drawMatrix!!, paint)
-            }
-            canvas.drawBitmap(imageFrom, drawMatrix!!, paintAlpha)
+            drawBitmaps(layerAction.listOfBitmaps, canvas, paint)
+            canvas.drawBitmap(layerAction.bitmapFrom, drawMatrix, paintAlpha)
         }
+    }
+
+    private fun drawBitmaps(listOfBitmaps: List<Bitmap>, canvas: Canvas, paint: Paint) {
+        listOfBitmaps.forEach { bitmap ->
+            canvas.drawBitmap(bitmap, drawMatrix, paint)
+        }
+    }
+
+    private fun getOpacityNormalized(currentScale: Float, layerAction: LayerAction): Float {
+        return (currentScale - layerAction.scaleFrom) / (layerAction.scaleTo - layerAction.scaleFrom)
+    }
+
+    private fun getOpacityNormalizedReversed(currentScale: Float, layerAction: LayerAction): Float {
+        return 1 - getOpacityNormalized(currentScale, layerAction)
     }
 
     private fun isScaleInBounds(currentScale: Float): Boolean {
