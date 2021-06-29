@@ -40,6 +40,8 @@ class CustomView @JvmOverloads constructor(
     private var secondLayerAction: LayerAction
     private var thirdLayer: Layer
 
+    private val identityMatrix = Matrix()
+
     var realScale = 1.0f
     var minScale = 1.0f
     var maxScale = 5.0f
@@ -70,7 +72,10 @@ class CustomView @JvmOverloads constructor(
             drawMatrix.postTranslate(horizontalOffset, verticalOffset)
             drawMatrix.postScale(scale, scale)
         }
+        canvas.concat(drawMatrix)
         changeImage(realScale, canvas)
+
+
         canvas.restore()
     }
 
@@ -193,10 +198,12 @@ class CustomView @JvmOverloads constructor(
                         canvas)
             }
             in thirdLayer.scaleFrom..thirdLayer.scaleTo -> {
-                drawBitmaps(thirdLayer.listOfBitmaps, canvas, paint)
+                drawBitmaps(thirdLayer, canvas, paint)
             }
         }
     }
+
+
 
     private fun changeImageFromScaleToScaleWithOpacity(layerAction: LayerAction,
                                                        imageToOnTopLayer: Boolean,
@@ -208,20 +215,26 @@ class CustomView @JvmOverloads constructor(
             val opacityNormalized = getOpacityNormalized(currentScale, layerAction)
             paintAlpha.alpha = opacityNormalized.times(255).roundToInt()
 
-            canvas.drawBitmap(layerAction.bitmapFrom, drawMatrix, paint)
-            drawBitmaps(layerAction.listOfBitmaps, canvas, paintAlpha)
+            canvas.drawBitmap(layerAction.bitmapFrom, identityMatrix, paint)
+            drawBitmaps(layerAction, canvas, paintAlpha)
         } else {
             val opacityNormalizedReversed = getOpacityNormalizedReversed(currentScale, layerAction)
             paintAlpha.alpha = opacityNormalizedReversed.times(255).roundToInt()
 
-            drawBitmaps(layerAction.listOfBitmaps, canvas, paint)
-            canvas.drawBitmap(layerAction.bitmapFrom, drawMatrix, paintAlpha)
+            drawBitmaps(layerAction, canvas, paint)
+            canvas.drawBitmap(layerAction.bitmapFrom, identityMatrix, paintAlpha)
         }
     }
 
-    private fun drawBitmaps(listOfBitmaps: List<Bitmap>, canvas: Canvas, paint: Paint) {
-        listOfBitmaps.forEach { bitmap ->
-            canvas.drawBitmap(bitmap, drawMatrix, paint)
+    private fun drawBitmaps(layerAction: LayerAction, canvas: Canvas, paint: Paint) {
+        layerAction.listOfBitmaps.forEach { bitmap ->
+            canvas.drawBitmap(bitmap, identityMatrix, paint)
+        }
+    }
+
+    private fun drawBitmaps(layerAction: Layer, canvas: Canvas, paint: Paint) {
+        layerAction.listOfObjects.forEach {
+            it.draw(canvas)
         }
     }
 
