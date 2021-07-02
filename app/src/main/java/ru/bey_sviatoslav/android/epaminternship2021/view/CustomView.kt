@@ -9,7 +9,6 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import ru.bey_sviatoslav.android.epaminternship2021.layer.Layer
-import ru.bey_sviatoslav.android.epaminternship2021.layer.LayerAction
 import ru.bey_sviatoslav.android.epaminternship2021.layer.LayoutManager
 import kotlin.math.roundToInt
 
@@ -36,8 +35,8 @@ class CustomView @JvmOverloads constructor(
     private var lastFocusX = 0f
     private var lastFocusY = 0f
     private var layoutManager: LayoutManager
-    private var firstLayerAction: LayerAction
-    private var secondLayerAction: LayerAction
+    private var firstLayer: Layer
+    private var secondLayer: Layer
     private var thirdLayer: Layer
 
     var realScale = 1.0f
@@ -70,7 +69,8 @@ class CustomView @JvmOverloads constructor(
             drawMatrix.postTranslate(horizontalOffset, verticalOffset)
             drawMatrix.postScale(scale, scale)
         }
-        changeImage(realScale, canvas)
+        canvas.concat(drawMatrix)
+        drawImageAccordingToScale(realScale, canvas)
         canvas.restore()
     }
 
@@ -170,67 +170,56 @@ class CustomView @JvmOverloads constructor(
         mode = START
         layoutManager = LayoutManager(this)
         image = layoutManager.backBitmap
-        firstLayerAction = layoutManager.firstLayerAction
-        secondLayerAction = layoutManager.secondLayerAction
+        firstLayer = layoutManager.firstLayer
+        secondLayer = layoutManager.secondLayer
         thirdLayer = layoutManager.thirdLayer
         initialize()
     }
 
-    private fun changeImage(scale: Float, canvas: Canvas) {
+    private fun drawImageAccordingToScale(scale: Float, canvas: Canvas) {
         when (scale) {
-            in firstLayerAction.scaleFrom..firstLayerAction.scaleTo -> {
-                changeImageFromScaleToScaleWithOpacity(
-                        firstLayerAction,
-                        false,
-                        scale,
-                        canvas)
+            in firstLayer.scaleFrom..firstLayer.scaleTo -> {
+                changeLayerFromScaleToScaleWithOpacity(firstLayer, secondLayer, false, scale, canvas)
             }
-            in secondLayerAction.scaleFrom..secondLayerAction.scaleTo -> {
-                changeImageFromScaleToScaleWithOpacity(
-                        secondLayerAction,
-                        true,
-                        scale,
-                        canvas)
+            in secondLayer.scaleFrom..secondLayer.scaleTo -> {
+                changeLayerFromScaleToScaleWithOpacity(secondLayer, thirdLayer, true, scale, canvas)
             }
             in thirdLayer.scaleFrom..thirdLayer.scaleTo -> {
-                drawBitmaps(thirdLayer.listOfBitmaps, canvas, paint)
+                drawBitmaps(thirdLayer, canvas, paint)
             }
         }
     }
 
-    private fun changeImageFromScaleToScaleWithOpacity(layerAction: LayerAction,
-                                                       imageToOnTopLayer: Boolean,
-                                                       currentScale: Float,
-                                                       canvas: Canvas) {
+    private fun changeLayerFromScaleToScaleWithOpacity(layerFrom: Layer, layerTo: Layer, layerToOnTop: Boolean, scale: Float, canvas: Canvas) {
         val paintAlpha = Paint()
 
-        if (imageToOnTopLayer) {
-            val opacityNormalized = getOpacityNormalized(currentScale, layerAction)
+        if (layerToOnTop) {
+            val opacityNormalized = getOpacityNormalized(scale, layerFrom)
             paintAlpha.alpha = opacityNormalized.times(255).roundToInt()
 
-            canvas.drawBitmap(layerAction.bitmapFrom, drawMatrix, paint)
-            drawBitmaps(layerAction.listOfBitmaps, canvas, paintAlpha)
+            drawBitmaps(layerFrom, canvas, paint)
+            drawBitmaps(layerTo, canvas, paintAlpha)
         } else {
-            val opacityNormalizedReversed = getOpacityNormalizedReversed(currentScale, layerAction)
+            val opacityNormalizedReversed = getOpacityNormalizedReversed(scale, layerFrom)
             paintAlpha.alpha = opacityNormalizedReversed.times(255).roundToInt()
 
-            drawBitmaps(layerAction.listOfBitmaps, canvas, paint)
-            canvas.drawBitmap(layerAction.bitmapFrom, drawMatrix, paintAlpha)
+            drawBitmaps(layerTo, canvas, paint)
+            drawBitmaps(layerFrom, canvas, paintAlpha)
         }
     }
 
-    private fun drawBitmaps(listOfBitmaps: List<Bitmap>, canvas: Canvas, paint: Paint) {
-        listOfBitmaps.forEach { bitmap ->
-            canvas.drawBitmap(bitmap, drawMatrix, paint)
+    private fun drawBitmaps(layerAction: Layer, canvas: Canvas, paint: Paint) {
+        layerAction.listOfObjects.forEach {
+            it.draw(canvas, paint)
         }
     }
 
-    private fun getOpacityNormalized(currentScale: Float, layerAction: LayerAction): Float {
-        return (currentScale - layerAction.scaleFrom) / (layerAction.scaleTo - layerAction.scaleFrom)
+    private fun getOpacityNormalized(currentScale: Float, layer: Layer): Float {
+        return (currentScale - layer.scaleFrom) / (layer.scaleTo - layer.scaleFrom)
     }
 
-    private fun getOpacityNormalizedReversed(currentScale: Float, layerAction: LayerAction): Float {
-        return 1 - getOpacityNormalized(currentScale, layerAction)
+    private fun getOpacityNormalizedReversed(currentScale: Float, layer: Layer): Float {
+        return 1 - getOpacityNormalized(currentScale, layer)
     }
 
     private fun isScaleInBounds(currentScale: Float): Boolean {
